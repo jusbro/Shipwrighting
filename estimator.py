@@ -10,6 +10,16 @@ import csv
 #Import datetime for date stamping in database
 from datetime import datetime
 
+#Import all libraries needed for printer
+import serial
+uart = serial.Serial("/dev/serial0", baudrate=19200, timeout=3000)
+import adafruit_thermal_printer
+
+#Setup printer as a device
+ThermalPrinter = adafruit_thermal_printer.get_printer_class(2.69)
+
+printer = ThermalPrinter(uart)
+
 #Create or initialize the CSV file that stores the data of the projects
 database_file_name = "estimates_database.csv"
 
@@ -112,7 +122,42 @@ date_now = now.strftime("%m/%d/%y %I:%M %p")
 print("\n\n Would you like to print estimate? (y/n)")
 print_est_choice = input("->")
 if print_est_choice == "y":
-    print("This will lead to the printing service in a future update")
+    try:
+        print("Printing Estimate Now")
+        printer.bold = True
+        printer.size = adafruit_thermal_printer.SIZE_LARGE
+        printer.print("Print Estimate")
+        printer.feed(1)
+        printer.bold = False
+        printer.size = adafruit_thermal_printer.SIZE_MEDIUM
+        printer.print(buy_last_name + ", " + buy_first_name)
+        printer.print(date_now)
+        printer.feed(1)
+        printer.size = adafruit_thermal_printer.SIZE_SMALL
+        printer.print("Order: ")
+        printer.print(build_notes)
+        printer.print("Color(s): ")
+        printer.print(colors_list)
+        printer.feed(1)
+        printer.bold = True
+        printer.print("Cost Breakdown:")
+        printer.bold = False
+        printer.print("All quantities in units of Gold")
+        printer.print(f"Base Cost: {calc_print_price}")
+        printer.print(f"Time Cost: {calc_time_price}")
+        printer.print(f"Prem. Fila. Surcharge: {calc_prem_fila_price}")
+        printer.print(f"Multicolor Surcharge: {calc_num_fila_colors_price}")
+        printer.print(f"Seafaring Surcharge: {calc_ship_surcharge}")
+        printer.print(f"Supply/Demand Surcharge: {calc_supp_demand_perc}")
+        printer.feed(1)
+        printer.bold = True
+        printer.print(f"Total Estimated Cost: {calc_final_estimate}")
+        printer.bold = False
+        printer.feed(3)
+    except:
+        print("An error occured connecting to the printer")
+    
+
 
 #Storing Estimate in database
 print("Would you like to save this estimate for future reference (y/n)")
